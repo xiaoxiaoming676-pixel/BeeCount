@@ -31,3 +31,11 @@
 - `devDebug` 包名在同一风味下稳定，可保留原数据；但不同 GitHub 托管 runner 默认生成的 debug 签名证书未必相同。证书变化时 Android 会拒绝覆盖安装，卸载重装会清空沙盒数据。
 - 在真正给用户长期记录财务数据的体验包之前，应为此分支配置一份稳定的专用测试签名密钥，保存在 GitHub Actions Secret（不提交仓库），并验证同一设备连续安装两版且原交易仍在。正式 Release 签名另行管理。
 - 首个临时 debug 包仅用于安装/功能验证；如果无稳定签名，先导出并验证可恢复的备份，不能宣称“升级无损”已验收。
+
+## 2026-09-24：首份云端体验 APK
+
+- 远端 `feature/accounting-v1` 提交 `82ac4bd` 对应 [Actions #3](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35952628945)，结果 success。全仓分析在子包依赖安装后 **0 error、795 条原仓 warning/info**；本次新增的三份记账代码及测试文件严格分析 0 诊断。
+- `flutter test`：794 passed、1 skipped；Android `testDevDebugUnitTest`：Gradle BUILD SUCCESSFUL，但目标任务 `NO-SOURCE`，此阶段没有实际 Android 单元测试用例。
+- 成功生成调试签名 `app-dev-debug.apk`，SHA-256 `95a6875f6cf75c491db84e8d397bbc955ae9d0367fe5ff2ae5e80dcd13a3de0d`；[Artifact `accounting-v1-dev-debug-3`](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35952628945) 有效期至 2026-10-24。尚无自动安装/启动或红米真机验证。
+- 后续单独阶段：加入 Android 模拟器安装启动冒烟测试、进度与红米验收文档；“关于”明确显示版本、构建号、短提交号。构建再次通过前，#3 仍是最新可用 APK。
+- 未完成：应用内系统中文语音入口、微信/支付宝通知监听、通知持久队列与去重、稳定调试签名、真实导出恢复和升级保数实测。

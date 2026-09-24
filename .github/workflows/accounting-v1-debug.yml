@@ -48,7 +48,7 @@ jobs:
       - name: Full static analysis (errors are fatal)
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - name: Strict analysis of new accounting code
-        run: flutter analyze lib/services/billing/local_bill_draft_parser.dart lib/pages/transaction/local_quick_entry_page.dart test/services/billing/local_bill_draft_parser_test.dart
+        run: flutter analyze lib/services/billing/local_bill_draft_parser.dart lib/pages/transaction/local_quick_entry_page.dart lib/pages/settings/about_page.dart test/services/billing/local_bill_draft_parser_test.dart
       - name: Flutter tests
         run: flutter test
       - name: Android unit tests
@@ -75,3 +75,31 @@ jobs:
             build/app/outputs/flutter-apk/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
+
+  emulator-smoke:
+    needs: android-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Download APK from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: accounting-v1-dev-debug-${{ github.run_number }}
+          path: smoke
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and start on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_7
+          script: |
+            set -e
+            adb install smoke/app-dev-debug.apk
+            adb shell am start -W -n com.tntlikely.beecount.dev/com.tntlikely.beecount.MainActivity
+            sleep 12
+            adb shell pidof com.tntlikely.beecount.dev

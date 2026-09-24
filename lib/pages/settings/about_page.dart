@@ -43,9 +43,10 @@ class _AboutPageState extends ConsumerState<AboutPage> {
 
   Future<void> _loadVersion() async {
     final info = await _getAppInfo();
-    final versionText = info.version.startsWith('dev-')
-        ? '${info.version} (${info.buildNumber})'
-        : info.version;
+    final shortCommit = info.commit == null ? ''
+        : ' · ${info.commit!.substring(0, info.commit!.length < 7 ? info.commit!.length : 7)}';
+    final versionText = '${info.version} (${info.buildNumber})$shortCommit';
+    if (!mounted) return;
     setState(() {
       _versionDisplay = versionText;
     });
