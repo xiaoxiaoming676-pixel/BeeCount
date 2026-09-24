@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 import '../../ai/core/bill_info.dart';
 import '../../providers.dart';
@@ -33,8 +34,38 @@ class _DraftEdit {
 }
 
 class _LocalQuickEntryPageState extends ConsumerState<LocalQuickEntryPage> {
+  static const _speech = MethodChannel('com.tntlikely.beecount/system_speech');
   final _text = TextEditingController();
   final _drafts = <_DraftEdit>[];
+  bool _recognizing = false;
+
+  Future<void> _recognizeSpeech() async {
+    if (_recognizing) return;
+    setState(() => _recognizing = true);
+    try {
+      final transcript = await _speech.invokeMethod<String>('recognizeChinese');
+      if (!mounted) return;
+      if (transcript == null || transcript.trim().isEmpty) {
+        throw PlatformException(code: 'EMPTY_RESULT', message: '没有识别到内容，请使用文字输入');
+      }
+      _text.text = [_text.text.trim(), transcript.trim()]
+          .where((part) => part.isNotEmpty).join('、');
+      _text.selection = TextSelection.collapsed(offset: _text.text.length);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('语音已转为文字，请生成草稿并逐笔核对'),
+      ));
+    } on PlatformException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message ?? '系统语音识别不可用，请使用文字输入'),
+      ));
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('语音识别不可用，请使用文字输入'),
+      ));
+    } finally {
+      if (mounted) setState(() => _recognizing = false);
+    }
+  }
 
   @override
   void dispose() { _text.dispose(); super.dispose(); }
@@ -118,10 +149,13 @@ class _LocalQuickEntryPageState extends ConsumerState<LocalQuickEntryPage> {
           decoration: const InputDecoration(hintText: '今天午饭35、打车18块5、昨天水果26',
               labelText: '描述消费或收入')),
       const SizedBox(height: 8),
+      OutlinedButton.icon(onPressed: _recognizing ? null : _recognizeSpeech,
+        icon: const Icon(Icons.mic_none),
+        label: Text(_recognizing ? '等待系统语音识别…' : '中文语音输入')),
       FilledButton(onPressed: () => setState(() {
         _drafts..clear()..addAll(LocalBillDraftParser.parse(_text.text).map(_DraftEdit.new));
       }), child: const Text('生成待确认草稿')),
-      const Text('逐笔核对后保存；不确定金额或日期不会自动入账。语音可先用系统输入法转文字。'),
+      const Text('逐笔核对后保存；不确定金额或日期不会自动入账。系统语音不可用时可直接输入文字。'),
       for (final draft in _drafts) Card(child: ListTile(
         title: Text('${draft.amount.isEmpty ? "金额待填" : "¥${draft.amount}"} · ${draft.note.isEmpty ? draft.source : draft.note}'),
         subtitle: Text(draft.warning ?? '${draft.type == 'income' ? '收入' : draft.type == 'transfer' ? '转账' : '支出'} · ${draft.time?.toLocal().toString().split(' ').first ?? '日期待选'}'),

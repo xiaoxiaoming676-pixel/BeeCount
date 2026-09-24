@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.speech.RecognizerIntent
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileInputStream
@@ -19,6 +20,9 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterFragmentActivity() {
+    private val SPEECH_CHANNEL = "com.tntlikely.beecount/system_speech"
+    private val SPEECH_REQUEST = 9175
+    private var pendingSpeechResult: MethodChannel.Result? = null
     private val CHANNEL = "notification_channel"
     private val INSTALL_CHANNEL = "com.tntlikely.beecount/install"
     private val SCREENSHOT_CHANNEL = "com.tntlikely.beecount/screenshot"
@@ -38,6 +42,25 @@ class MainActivity: FlutterFragmentActivity() {
         setIntent(intent) // 重要：更新当前intent
         handleNotificationIntent(intent)
         handleSharedImage(intent)
+    }
+
+    @Deprecated("Android activity result API is used by the existing Flutter activity")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != SPEECH_REQUEST) return
+        val callback = pendingSpeechResult ?: return
+        pendingSpeechResult = null
+        if (resultCode != android.app.Activity.RESULT_OK) {
+            callback.error("CANCELLED", "语音识别已取消，请改用文字输入", null)
+            return
+        }
+        val transcript = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            ?.firstOrNull()?.trim().orEmpty()
+        if (transcript.isEmpty()) {
+            callback.error("EMPTY_RESULT", "没有识别到内容，请改用文字输入", null)
+        } else {
+            callback.success(transcript)
+        }
     }
 
     private fun handleSharedImage(intent: Intent?) {
@@ -132,6 +155,32 @@ class MainActivity: FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SPEECH_CHANNEL).setMethodCallHandler { call, result ->
+            if (call.method != "recognizeChinese") {
+                result.notImplemented()
+            } else if (pendingSpeechResult != null) {
+                result.error("BUSY", "语音识别正在进行", null)
+            } else {
+                val speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "zh-CN")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "说出日期、用途和金额")
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                }
+                if (speechIntent.resolveActivity(packageManager) == null) {
+                    result.error("UNAVAILABLE", "系统没有可用的中文语音识别，请使用文字输入", null)
+                } else {
+                    pendingSpeechResult = result
+                    try {
+                        startActivityForResult(speechIntent, SPEECH_REQUEST)
+                    } catch (e: Exception) {
+                        pendingSpeechResult = null
+                        result.error("UNAVAILABLE", "无法启动语音识别，请使用文字输入", null)
+                    }
+                }
+            }
+        }
 
         android.util.Log.e("MainActivity", "==========================================")
         android.util.Log.e("MainActivity", "configureFlutterEngine 被调用！！！")

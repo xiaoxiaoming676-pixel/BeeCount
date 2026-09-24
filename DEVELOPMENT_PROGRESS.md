@@ -39,3 +39,22 @@
 - 成功生成调试签名 `app-dev-debug.apk`，SHA-256 `95a6875f6cf75c491db84e8d397bbc955ae9d0367fe5ff2ae5e80dcd13a3de0d`；[Artifact `accounting-v1-dev-debug-3`](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35952628945) 有效期至 2026-10-24。尚无自动安装/启动或红米真机验证。
 - 后续单独阶段：加入 Android 模拟器安装启动冒烟测试、进度与红米验收文档；“关于”明确显示版本、构建号、短提交号。构建再次通过前，#3 仍是最新可用 APK。
 - 未完成：应用内系统中文语音入口、微信/支付宝通知监听、通知持久队列与去重、稳定调试签名、真实导出恢复和升级保数实测。
+
+## 2026-09-24：模拟器测试首轮日志
+
+- [Actions #4](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35953655465)：静态检查、Flutter 测试、Android 构建、debug APK 与 Artifact 上传成功；模拟器 Android API 35 启动成功，`adb install` 返回 `Success`。
+- 启动脚本指定的 Activity 完整类名与实际 APK 的 LAUNCHER 注册项不匹配，`am start` 返回 `Error type 3 Activity class ... does not exist`，因此自动启动测试失败，不能算启动通过。改用 `monkey -p com.tntlikely.beecount.dev -c android.intent.category.LAUNCHER 1` 按安装包真实入口启动，并检查进程；结果待下次运行。
+
+## 2026-09-24：系统中文语音入口（待云端验证）
+
+- Android 原生调用系统 `RECOGNIZE_SPEECH`，中文语音结果回填文字记账页，继续由既有草稿解析、核对和保存流程处理；没有系统识别服务、取消或空结果时提示文字输入。补充 Flutter 页面模拟测试覆盖成功和不可用两种情况。
+- 目前只是源码实现，尚未纳入成功构建，不能标为可用或真机通过；等待上个阶段的模拟器构建结束后再单独提交远端并查看新 APK 日志。
+
+## 2026-09-24：通知解析规则（待云端验证）
+
+- 增加原生 Kotlin 的微信/支付宝通知候选解析与 JUnit 模拟测试：支出、退款、转账、金额缺失、同一通知重复、同金额不同商户以及可能的跨来源重复。全部候选只标为待核对，不自动保存到账本；关联通知仅提示可能重复，不自动合并。
+- 这一步尚未实现 `NotificationListenerService`、持久化队列、Flutter 待核对列表及账单导入关联去重，因此不宣称自动记账可用。代码及测试待云端构建验证。
+
+## 2026-09-24：Release 签名防护
+
+- 公开提交原有 `android/app/build.gradle` 时自动审核拦截：原仓库缺少正式签名文件时会尝试生成固定口令调试密钥签 Release 或允许未签名产物。已移除这一回退；缺少完整私有 `key.properties` 时 Release 任务应失败，当前 debug 构建照常使用 Android 调试签名。不生成、不上传正式签名密钥。

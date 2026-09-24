@@ -100,6 +100,6 @@ jobs:
           script: |
             set -e
             adb install smoke/app-dev-debug.apk
-            adb shell am start -W -n com.tntlikely.beecount.dev/com.tntlikely.beecount.MainActivity
+            adb shell monkey -p com.tntlikely.beecount.dev -c android.intent.category.LAUNCHER 1
             sleep 12
             adb shell pidof com.tntlikely.beecount.dev
