@@ -48,7 +48,7 @@ jobs:
       - name: Full static analysis (errors are fatal)
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - name: Strict analysis of new accounting code
-        run: flutter analyze lib/services/billing/local_bill_draft_parser.dart lib/pages/transaction/local_quick_entry_page.dart lib/pages/settings/about_page.dart test/services/billing/local_bill_draft_parser_test.dart
+        run: flutter analyze lib/services/billing/local_bill_draft_parser.dart lib/pages/transaction/local_quick_entry_page.dart lib/pages/settings/about_page.dart test/services/billing/local_bill_draft_parser_test.dart test/pages/transaction/local_quick_entry_speech_test.dart
       - name: Flutter tests
         run: flutter test
       - name: Android unit tests

@@ -31,6 +31,7 @@ class _DraftEdit {
   String type;
   String? warning;
   bool saving = false;
+  bool reviewed = false;
 }
 
 class _LocalQuickEntryPageState extends ConsumerState<LocalQuickEntryPage> {
@@ -55,13 +56,17 @@ class _LocalQuickEntryPageState extends ConsumerState<LocalQuickEntryPage> {
         content: Text('语音已转为文字，请生成草稿并逐笔核对'),
       ));
     } on PlatformException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.message ?? '系统语音识别不可用，请使用文字输入'),
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.message ?? '系统语音识别不可用，请使用文字输入'),
+        ));
+      }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('语音识别不可用，请使用文字输入'),
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('语音识别不可用，请使用文字输入'),
+        ));
+      }
     } finally {
       if (mounted) setState(() => _recognizing = false);
     }
@@ -110,12 +115,17 @@ class _LocalQuickEntryPageState extends ConsumerState<LocalQuickEntryPage> {
         draft.time = time;
         draft.type = type;
         draft.warning = null;
+        draft.reviewed = true;
       });
     }
     amount.dispose(); note.dispose();
   }
 
   Future<void> _save(_DraftEdit draft) async {
+    if (!draft.reviewed) {
+      setState(() => draft.warning = '请点开草稿逐项核对并确认后保存');
+      return;
+    }
     final cents = LocalBillDraftParser.parseMinor(draft.amount);
     if (cents == null || cents <= 0 || draft.time == null || draft.type == 'transfer' ||
         draft.warning != null) {

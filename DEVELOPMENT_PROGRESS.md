@@ -58,3 +58,7 @@
 ## 2026-09-24：Release 签名防护
 
 - 公开提交原有 `android/app/build.gradle` 时自动审核拦截：原仓库缺少正式签名文件时会尝试生成固定口令调试密钥签 Release 或允许未签名产物。已移除这一回退；缺少完整私有 `key.properties` 时 Release 任务应失败，当前 debug 构建照常使用 Android 调试签名。不生成、不上传正式签名密钥。
+
+## 2026-09-24：语音版首轮 CI 反馈
+
+- [Actions #5](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35954921543)：全仓错误检查通过，新增语音页严格分析出现 2 处 `curly_braces_in_flow_control_structures` 信息级诊断，阻止后续测试与 APK。已依日志补上花括号，并把新语音模拟测试文件纳入严格分析；下一次运行前不能宣称语音功能通过。
