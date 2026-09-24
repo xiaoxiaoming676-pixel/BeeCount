@@ -68,3 +68,10 @@
 - [Actions #6](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35955440762)：全仓分析和新增代码严格分析通过，Flutter 测试、Kotlin 通知解析 JUnit 与 debug APK 构建成功。Artifact 已生成，但整个工作流因模拟器启动失败而为 failure。
 - Android API 35 模拟器 `adb install` 为 `Success`；启动时仍指定了错误包名（项目 `dev` 风味与 `debug` 类型叠加后缀），`monkey` 报 `No activities found to run`。加入构建产物 `aapt dump badging` 读取真实包名的独立脚本，重新验证启动及进程；尚不可写为模拟器启动通过。
 - 已成功构建的语音版 APK 仍需系统中文语音服务及红米真机验收；通知解析只是候选识别和模拟测试，监听/入账功能仍未完成。
+
+## 2026-09-24：当前推荐体验包 #7
+
+- [Actions #7](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35956502762)，远端提交 `b336ad0`，两个 job 均 success。全仓分析 0 error、795 条既存 warning/info；严格新增代码分析 0 诊断；`flutter test` 796 passed、1 skipped；Android `testDevDebugUnitTest` 执行 Kotlin 通知解析 JUnit 并通过；debug APK 构建及 Artifact 上传成功。
+- Android API 35 模拟器从 APK 元数据解析包名 `com.tntlikely.beecount.dev.debug`，`adb install` 返回 `Success`，系统 LAUNCHER 注入 1 个启动事件，12 秒后 `pidof` 返回运行中进程号。此自动冒烟验证安装与进程存活，未检验首页 UI 交互，红米真机测试仍待用户验收。
+- 当前可用 APK：`accounting-v1-dev-debug-7` 内 `app-dev-debug.apk`，SHA-256 `f680a9aa703f2bf0a8be2b087cf95c6e3069439ff5d4a90a9bcf46a5e88d99fc`；Artifact 有效至 2026-10-24。支持手动交易、离线文字草稿、系统语音回填文字、现有统计和手动导入导出入口。语音仅验证平台通道模拟测试，尚未红米真机识别。
+- 下一阶段：原生通知监听与私有持久队列、待核对处理、成功入账后确认与跨来源去重；稳定测试签名与覆盖升级保数；真实账本导出恢复及红米锁屏/重启验证。
