@@ -62,3 +62,9 @@
 ## 2026-09-24：语音版首轮 CI 反馈
 
 - [Actions #5](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35954921543)：全仓错误检查通过，新增语音页严格分析出现 2 处 `curly_braces_in_flow_control_structures` 信息级诊断，阻止后续测试与 APK。已依日志补上花括号，并把新语音模拟测试文件纳入严格分析；下一次运行前不能宣称语音功能通过。
+
+## 2026-09-24：语音与通知解析 CI、模拟器入口问题
+
+- [Actions #6](https://github.com/xiaoxiaoming676-pixel/BeeCount/actions/runs/35955440762)：全仓分析和新增代码严格分析通过，Flutter 测试、Kotlin 通知解析 JUnit 与 debug APK 构建成功。Artifact 已生成，但整个工作流因模拟器启动失败而为 failure。
+- Android API 35 模拟器 `adb install` 为 `Success`；启动时仍指定了错误包名（项目 `dev` 风味与 `debug` 类型叠加后缀），`monkey` 报 `No activities found to run`。加入构建产物 `aapt dump badging` 读取真实包名的独立脚本，重新验证启动及进程；尚不可写为模拟器启动通过。
+- 已成功构建的语音版 APK 仍需系统中文语音服务及红米真机验收；通知解析只是候选识别和模拟测试，监听/入账功能仍未完成。

@@ -81,6 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v4
       - name: Download APK from this run
         uses: actions/download-artifact@v4
         with:
@@ -97,9 +98,4 @@ jobs:
           api-level: 35
           arch: x86_64
           profile: pixel_7
-          script: |
-            set -e
-            adb install smoke/app-dev-debug.apk
-            adb shell monkey -p com.tntlikely.beecount.dev -c android.intent.category.LAUNCHER 1
-            sleep 12
-            adb shell pidof com.tntlikely.beecount.dev
+          script: bash scripts/ci/android_smoke.sh
