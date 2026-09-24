@@ -35,6 +35,9 @@ jobs:
           cache: true
       - name: Install dependencies
         run: flutter pub get
+      - name: Install agentcore test dependencies
+        working-directory: packages/agentcore
+        run: dart pub get
       - name: Prepare missing Gradle wrapper
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -42,8 +45,10 @@ jobs:
       - name: Generate Gradle wrapper in CI
         working-directory: android
         run: gradle wrapper --gradle-version 8.13 --distribution-type all
-      - name: Static analysis
-        run: flutter analyze
+      - name: Full static analysis (errors are fatal)
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+      - name: Strict analysis of new accounting code
+        run: flutter analyze lib/services/billing/local_bill_draft_parser.dart lib/pages/transaction/local_quick_entry_page.dart test/services/billing/local_bill_draft_parser_test.dart
       - name: Flutter tests
         run: flutter test
       - name: Android unit tests
