@@ -15,6 +15,7 @@ import '../../widgets/biz/bee_icon.dart';
 import '../../styles/tokens.dart';
 import '../transaction/search_page.dart';
 import '../ai/ai_chat_page.dart';
+import '../transaction/local_quick_entry_page.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/system/logger_service.dart';
 import '../../utils/format_utils.dart';
@@ -865,6 +866,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                             ],
                           ),
+                        ),
+                        // 离线文字记账直接进入逐笔草稿核对。
+                        IconButton(
+                          tooltip: '文字记账',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const LocalQuickEntryPage()),
+                          ),
+                          icon: const Icon(Icons.edit_note),
                         ),
                         // 右侧操作按钮
                         if (aiEnabled)

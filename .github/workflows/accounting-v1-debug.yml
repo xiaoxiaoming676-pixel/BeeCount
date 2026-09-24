@@ -1,0 +1,72 @@
+name: Accounting V1 debug APK
+
+on:
+  push:
+    branches: [feature/accounting-v1]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: accounting-v1-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android platform and NDK
+        run: sdkmanager --install 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0' 'ndk;27.0.12077973'
+      - name: Flutter 3.27.3 (Dart 3.6)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.3'
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Prepare missing Gradle wrapper
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Generate Gradle wrapper in CI
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.13 --distribution-type all
+      - name: Static analysis
+        run: flutter analyze
+      - name: Flutter tests
+        run: flutter test
+      - name: Android unit tests
+        working-directory: android
+        run: ./gradlew testDevDebugUnitTest --no-daemon
+      - name: Build installable debug APK
+        run: |
+          flutter build apk --debug --flavor dev \
+            --build-name=0.1.0 --build-number="${{ github.run_number }}" \
+            --dart-define=CI_VERSION=accounting-v1-debug \
+            --dart-define=GIT_COMMIT="${{ github.sha }}" \
+            --dart-define=BUILD_TIME="${{ github.run_id }}"
+      - name: Inspect APK and checksum
+        run: |
+          set -euo pipefail
+          test -s build/app/outputs/flutter-apk/app-dev-debug.apk
+          sha256sum build/app/outputs/flutter-apk/app-dev-debug.apk | tee build/app/outputs/flutter-apk/SHA256SUMS.txt
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: accounting-v1-dev-debug-${{ github.run_number }}
+          path: |
+            build/app/outputs/flutter-apk/app-dev-debug.apk
+            build/app/outputs/flutter-apk/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
